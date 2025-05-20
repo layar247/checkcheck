@@ -1,0 +1,25 @@
+    async with async_session() as session:
+        for topic in TOPICS:
+            # Проверка типов весов
+            weights = [round(w) for w in topic['weights']]
+            if not all(isinstance(x, (int,float)) for x in topic['weights']):
+                print(f"⚠️ Пропущена тема '{topic['title']}': неверный формат весов")
+                continue
+            print(f"Перед сохранением: {topic['title']} с весами {topic['weights']}")
+            # Проверка существования темы
+            exists = await session.scalar(
+                select(Topic).where(Topic.title == topic['title'])
+            )
+
+            if not exists:
+                new_topic = Topic(
+                    title=topic['title'],
+                    description=topic['description'],
+                    difficulty=topic['difficulty'],
+                    direction=topic['direction'],
+                    weights=weights
+                )
+                session.add(new_topic)
+                print(f"Добавлена тема: {topic['title']}")
+
+        await session.commit()
